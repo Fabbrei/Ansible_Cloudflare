@@ -1,5 +1,6 @@
 {
     "yaml.schemas": {
         "https://raw.githubusercontent.com/ansible/ansible-lint/main/src/ansiblelint/schemas/ansible.json#/$defs/tasks": "file:///home/max/projects/Ansible_Cloudflare/ansible_cloudflare/tasks/main.yml"
-    }
+    },
+    "ansible.python.interpreterPath": "/usr/bin/python3"
 }
