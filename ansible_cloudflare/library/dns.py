@@ -74,7 +74,61 @@ import CloudFlare
 
 
 def get_or_create_dns_record(cf=None, params=None):
-    return False
+    zone_id=params['zone_id']
+    name=params['name']
+    type=params['type']
+    data=params['data']
+    ttl=params['ttl']
+
+    result = dict(
+        changed=False,
+        record_id=''
+    )
+
+    return_status = False
+
+    msg = ""
+
+    if not cf:
+        msg = "Object Cloudflare is None"
+        return return_status, result, msg
+
+    dns_records = cf.zones.dns_records(zone_id)
+
+    if 'content' in data:
+        key_pivot = 'content'
+        param_to_search = data['content']
+    else:
+        key_pivot = 'data'
+        param_to_search = data
+
+    for record in dns_records:
+        if record['type'] == type and record['name'] == name and record[key_pivot] == param_to_search:
+            msg = f"Record {type} - {name} - {param_to_search} already on zone"
+            return_status = True
+            result['record_id'] = record['id']
+            return return_status, result, msg
+
+
+    
+    dns_record = {
+        "type": type,
+        "name": name,
+        "ttl": ttl
+    }
+
+    if type == "SRV":
+        dns_record.update({"data": data})
+    else:
+        dns_record.update({"content": data['content']})
+
+    new_record = cf.zones.dns_records.post(zone_id, data=dns_record)
+
+    return_status = True
+    result['changed'] = True
+    result['record_id'] = new_record['id']
+
+    return return_status, result, msg
 
 
 def run_module():
@@ -82,13 +136,12 @@ def run_module():
     module_args = dict(
         email=dict(type='str', required=True),
         api_key=dict(type='str', required=True),
-        account_id=dict(type='str', required=False),
         zone_id=dict(type='str', required=True),
         name=dict(type='str', required=True),
         type=dict(type='str', required=True),
         data=dict(type='dict', required=True),
         ttl=dict(type='int', required=True)
-        )
+    )
     
     # seed the result dict in the object
     # we primarily care about changed and state
