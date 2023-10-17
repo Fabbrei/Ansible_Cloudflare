@@ -73,73 +73,8 @@ from ansible.module_utils.basic import AnsibleModule
 import CloudFlare
 
 
-
-    
-def get_or_create_zone(cf=None, params=None):
-    account_id = params['account_id']
-    name = params['name']
-    result = dict(
-        changed=False,
-        zone_id=''
-    )
-    
-
-    return_status = False
-
-    msg = ""
-
-    if not cf:
-        msg = "Object Cloudflare is None"
-        return return_status, result, msg
-
-    current_zones = None
-
-    try:
-        if account_id:
-            current_zones = cf.zones.get(params={"account": {"id": account_id}})
-        else:
-            current_zones = cf.zones.get()
-
-    except Exception as e:
-        msg = f"Failed to retrieve zones\nError:{e}"
-        return return_status, result, msg
-
-
-    if not current_zones:
-        msg = "Failed to retrieve zones, current_zones is None"
-        return return_status, result, msg
-
-
-    for zone in current_zones:
-        if zone['name'] == name:
-            msg = f"Zone {name} already on Cloudflare account"
-            return_status = True
-            result['zone_id'] = zone['id']
-            return return_status, result, msg
-
-    
-    
-    data = {"name": name}
-
-    if account_id:
-        data.update({"account":{"id": account_id}})
-
-    new_zone = None
-
-    try:
-        
-        new_zone = cf.zones.post(data=data)
-    
-    except Exception as e:
-        msg = f"Failed to create zone {name}\nError:{e}"
-        return return_status, result, msg
-
-    return_status = True
-    result['changed'] = True
-    result['zone_id'] = new_zone['id']
-
-    return return_status, result, msg
-
+def get_or_create_dns_record(cf=None, params=None):
+    return False
 
 
 def run_module():
@@ -148,8 +83,12 @@ def run_module():
         email=dict(type='str', required=True),
         api_key=dict(type='str', required=True),
         account_id=dict(type='str', required=False),
-        name=dict(type='str', required=True)
-    )
+        zone_id=dict(type='str', required=True),
+        name=dict(type='str', required=True),
+        type=dict(type='str', required=True),
+        data=dict(type='dict', required=True),
+        ttl=dict(type='int', required=True)
+        )
     
     # seed the result dict in the object
     # we primarily care about changed and state
@@ -158,7 +97,7 @@ def run_module():
     # for consumption, for example, in a subsequent task
     result = dict(
         changed=False,
-        zone_id=''
+        record_id=''
     )
 
     # the AnsibleModule object will be our abstraction working with Ansible
@@ -184,8 +123,9 @@ def run_module():
         msg = f"Failed to initialize Cloudflare API\nError: {e}"
         module.fail_json(msg=msg, **result)
     
+    return_status, result, msg = get_or_create_dns_record(cf, module.params)
 
-    return_status, result, msg = get_or_create_zone(cf, module.params)
+    
 
     if not return_status:
         module.fail_json(msg=msg, **result)
