@@ -1,0 +1,7 @@
+---
+# tasks file for ansible_cloudflare
+- name: Import zone task
+  import_tasks: zone.yml
+
+- name: Import dns task
+  import_tasks: dns.yml
