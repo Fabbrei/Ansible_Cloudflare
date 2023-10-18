@@ -1,0 +1,10 @@
+- name: Add dns record
+  dns:
+    name: "{{ item.name }}"
+    api_key: "{{ ansible_cloudflare_api_key }}"
+    email: "{{ ansible_cloudflare_email }}"
+    zone_id: "{{ ansible_cloudflare_zone_id }}"
+    type: "{{ item.type }}"
+    ttl: "{{ item.ttl }}"
+    data: "{{ item.data}}"
+  loop: "{{ ansible_records }}"

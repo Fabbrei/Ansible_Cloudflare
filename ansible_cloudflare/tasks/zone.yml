@@ -1,6 +1,12 @@
 - name: Ensure zone exists
   zone:
-    name: "{{ ansible_cloudflare_name }}"
+    name: "{{ ansible_cloudflare_zone_name }}"
     api_key: "{{ ansible_cloudflare_api_key }}"
     email: "{{ ansible_cloudflare_email }}"
     account_id: "{{ ansible_cloudflare_account_id | default(omit) }}"
+  register: zone_output
+
+- name: Setting zone_id
+  set_fact:
+    ansible_cloudflare_zone_id: "{{ zone_output.zone_id }}"
+    

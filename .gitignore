@@ -1,3 +1,5 @@
-main.yml
+launch.yaml
 ansible.cfg
 settings.json
+*__pycache__*
+test.yaml
