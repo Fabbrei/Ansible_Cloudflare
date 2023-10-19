@@ -5,8 +5,8 @@
 
 - name: Import dns task
   import_tasks: dns.yml
-  when: ansible_cloudflare_records is not omit
+  when: (ansible_cloudflare_records | length) > 0
 
 - name: Import dns_file tasks
   import_tasks: dns_file.yml
-  when: ansible_cloudflare_db_file is not omit
+  when: ansible_cloudflare_db_file != ''
