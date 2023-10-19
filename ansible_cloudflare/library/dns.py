@@ -191,7 +191,12 @@ def run_module():
         type=dict(type='str', required=False),
         data=dict(type='dict', required=False),
         ttl=dict(type='int', required=False),
-        file_db=dict(type='str', required=False)
+        file_db=dict(type='str', required=False),
+        mutually_exclusive=['name', 'file_db'],
+        required_one_of=['name', 'file_db'],
+        required_together=[
+            ('name', 'type', 'data', 'ttl')
+        ]
     )
 
     result = dict(
