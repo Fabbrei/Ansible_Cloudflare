@@ -91,7 +91,7 @@ record_id:
 
 from ansible.module_utils.basic import AnsibleModule
 import CloudFlare
-
+import os
 
 def get_or_create_dns_record(cf=None, params=None):
     zone_id=params['zone_id']
@@ -151,15 +151,47 @@ def get_or_create_dns_record(cf=None, params=None):
     return return_status, result, msg
 
 
+def import_dns_db(cf=None, db_file_path=None, zone_id=None):
+    result = dict(
+        changed=False,
+        record_id=''
+    )
+
+    return_status = False
+
+    msg = ""
+    if not os.path.exists(db_file_path):
+        msg = f"DB file {db_file_path} does not exists"
+        return return_status, result, msg
+
+    fd = open(db_file_path, 'rb')
+
+    m = cf.zones.dns_records
+    m = getattr(m, 'import_')
+    
+    try:
+        db_import = m.post(zone_id, files={'file':fd})
+    except Exception as e:
+        msg = f"Error importing the DB file\nError: {e}"
+        return return_status, result, msg
+
+    return_status = True
+    result['changed'] = True
+
+    return return_status, result, msg
+        
+
+
 def run_module():
     module_args = dict(
         email=dict(type='str', required=True),
         api_key=dict(type='str', required=True),
         zone_id=dict(type='str', required=True),
-        name=dict(type='str', required=True),
-        type=dict(type='str', required=True),
-        data=dict(type='dict', required=True),
-        ttl=dict(type='int', required=True)
+        name=dict(type='str', required=False),
+        type=dict(type='str', required=False),
+        data=dict(type='dict', required=False),
+        ttl=dict(type='int', required=False),
+        file_db=dict(type='str', required=False)
     )
 
     result = dict(
@@ -183,7 +215,12 @@ def run_module():
         msg = f"Failed to initialize Cloudflare API\nError: {e}"
         module.fail_json(msg=msg, **result)
     
-    return_status, result, msg = get_or_create_dns_record(cf, module.params)
+
+
+    if module.params['file_db']:
+        return_status, result, msg = import_dns_db(cf, module.params['file_db'], module.params['zone_id'])
+    else:
+        return_status, result, msg = get_or_create_dns_record(cf, module.params)
 
     
 
