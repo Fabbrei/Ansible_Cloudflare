@@ -2,6 +2,12 @@
 # tasks file for ansible_cloudflare
 - name: Import zone task
   import_tasks: zone.yml
+  when: ansible_cloudflare_db_file is not defined
 
 - name: Import dns task
   import_tasks: dns.yml
+  when: ansible_cloudflare_db_file is not defined
+
+- name: Import dns_file tasks
+  import_tasks: dns_file.yml
+  when: ansible_cloudflare_db_file is defined

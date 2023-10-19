@@ -1,0 +1,6 @@
+- name: Import dns file
+  dns:
+    api_key: "{{ ansible_cloudflare_api_key }}"
+    email: "{{ ansible_cloudflare_email }}"
+    zone_id: "{{ ansible_cloudflare_zone_id }}"
+    file: "{{ ansible_cloudflare_db_file }}"

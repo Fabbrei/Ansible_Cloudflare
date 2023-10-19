@@ -7,6 +7,5 @@
   register: zone_output
 
 - name: Setting zone_id
-  set_fact:
+  ansible.builtin.set_fact:
     ansible_cloudflare_zone_id: "{{ zone_output.zone_id }}"
-    
