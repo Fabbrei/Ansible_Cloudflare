@@ -1,72 +1,92 @@
 #!/usr/bin/python
 
-# Copyright: (c) 2018, Terry Jones <terry.jones@example.org>
+# Copyright: (c) 2023, Fabrizio Di Cesare <terry.jones@example.org> Massimo Schembri <massimo.schembri18@gmail.com>
 # GNU General Public License v3.0+ (see COPYING or https://www.gnu.org/licenses/gpl-3.0.txt)
 from __future__ import (absolute_import, division, print_function)
 __metaclass__ = type
 
 DOCUMENTATION = r'''
 ---
-module: my_test
+module: dcs.cloudflare.dns
 
-short_description: This is my test module
+short_description: This is module adds/retrieves a dns record in cloudflare.
 
-# If this is part of a collection, you need to use semantic versioning,
-# i.e. the version is of the form "2.5.0" and not "2.4".
 version_added: "1.0.0"
 
-description: This is my longer description explaining my test module.
+description: This is module adds/retrieves a dns record in cloudflare in an idempotent manner. 
 
 options:
-    name:
-        description: This is the message to send to the test module.
+    email:
+        description: The email credential to use the CloudFlare's API
         required: true
         type: str
-    new:
-        description:
-            - Control to demo if the result of this module is changed or not.
-            - Parameter description can be a list as well.
-        required: false
-        type: bool
-# Specify this value according to your collection
-# in format of namespace.collection.doc_fragment_name
-# extends_documentation_fragment:
-#     - my_namespace.my_collection.my_doc_fragment_name
+    api_key:
+        description: The api key to use the CloudFlare's API
+        required: true
+        type: str
+    zone_id:
+        description: The zone_id in which you want to add/retrieve the record
+        required: true
+        type: str
+    name:
+        description: The name of the record
+        required: true
+        type: str
+    type:
+        description: The type of the record you want to add
+        required: true
+        type: str
+    data:
+        description: The content of the record
+        required: true
+        type: dict
+    ttl:
+        description: Time to live of the record
+        required: true
+        type: int
+    
 
 author:
-    - Your Name (@yourGitHubHandle)
+    - Fabrizio Di Cesare (@Fabbrei)
+    - Massimo Schembri (@peterparser)
 '''
 
 EXAMPLES = r'''
-# Pass in a message
+# Create an A record associated to myrecord.myzone with IP 100.100.100.100
 - name: Test with a message
-  my_namespace.my_collection.my_test:
-    name: hello world
+  dcs.cloudflare.dns:
+    name: myrecord.myzone
+    api_key: my_key
+    email: mymail@mail.com
+    zone_id: myzone_id
+    type: A
+    ttl: 3600
+    data:
+        content: 100.100.100.100
 
-# pass in a message and have changed true
+# Create an CNAME record associated
 - name: Test with a message and changed output
   my_namespace.my_collection.my_test:
     name: hello world
     new: true
 
-# fail the module
+# CREATE AN SRV record
 - name: Test failure of the module
   my_namespace.my_collection.my_test:
     name: fail me
+
+# CREATE AN MX record
+
+# CREATE A SRV RECORD
 '''
 
 RETURN = r'''
 # These are examples of possible return values, and in general should use other names for return values.
-original_message:
-    description: The original name param that was passed in.
+record_id:
+    description: The id of the record inserted
     type: str
     returned: always
     sample: 'hello world'
-message:
-    description: The output message that the test module generates.
-    type: str
-    returned: always
-    sample: 'goodbye'
 '''
 
 from ansible.module_utils.basic import AnsibleModule
@@ -132,7 +152,6 @@ def get_or_create_dns_record(cf=None, params=None):
 
 
 def run_module():
-    # define available arguments/parameters a user can pass to the module
     module_args = dict(
         email=dict(type='str', required=True),
         api_key=dict(type='str', required=True),
@@ -142,29 +161,17 @@ def run_module():
         data=dict(type='dict', required=True),
         ttl=dict(type='int', required=True)
     )
-    
-    # seed the result dict in the object
-    # we primarily care about changed and state
-    # changed is if this module effectively modified the target
-    # state will include any data that you want your module to pass back
-    # for consumption, for example, in a subsequent task
+
     result = dict(
         changed=False,
         record_id=''
     )
 
-    # the AnsibleModule object will be our abstraction working with Ansible
-    # this includes instantiation, a couple of common attr would be the
-    # args/params passed to the execution, as well as if the module
-    # supports check mode
     module = AnsibleModule(
         argument_spec=module_args,
         supports_check_mode=True
     )
 
-    # if the user is working with this module in only check mode we do not
-    # want to make any changes to the environment, just return the current
-    # state with no modifications
     if module.check_mode:
         module.exit_json(**result)
 

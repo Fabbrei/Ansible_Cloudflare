@@ -1,78 +1,75 @@
 #!/usr/bin/python
 
-# Copyright: (c) 2018, Terry Jones <terry.jones@example.org>
+# Copyright: (c) 2023, Fabrizio Di Cesare <terry.jones@example.org> Massimo Schembri <massimo.schembri18@gmail.com>
 # GNU General Public License v3.0+ (see COPYING or https://www.gnu.org/licenses/gpl-3.0.txt)
 from __future__ import (absolute_import, division, print_function)
 __metaclass__ = type
 
 DOCUMENTATION = r'''
 ---
-module: my_test
+module: dcs.cloudflare.zone
 
-short_description: This is my test module
+short_description: Retrieve/Create a zone in cloudflare
 
-# If this is part of a collection, you need to use semantic versioning,
-# i.e. the version is of the form "2.5.0" and not "2.4".
 version_added: "1.0.0"
 
-description: This is my longer description explaining my test module.
+description: This module creates or retrieves a zone from cloudflare.
 
 options:
-    name:
-        description: This is the message to send to the test module.
+    email:
+        description: The email credential to use the CloudFlare's API
         required: true
         type: str
-    new:
-        description:
-            - Control to demo if the result of this module is changed or not.
-            - Parameter description can be a list as well.
+    api_key:
+        description: The api key to use the CloudFlare's API
+        required: true
+        type: str
+    account_id:
+        description: The account ID in which you want to create the zone, if you will omit this, you will create this in you root account
         required: false
-        type: bool
+        type: str
+    name:
+        description: The zone name
+        required: true
+        type: str
 # Specify this value according to your collection
 # in format of namespace.collection.doc_fragment_name
 # extends_documentation_fragment:
 #     - my_namespace.my_collection.my_doc_fragment_name
 
 author:
-    - Your Name (@yourGitHubHandle)
+    - Fabrizio Di Cesare (@Fabbrei)
+    - Massimo Schembri (@peterparser)
 '''
 
 EXAMPLES = r'''
-# Pass in a message
+# Create a zone called "myzone.test" in a a specific account id
 - name: Test with a message
-  my_namespace.my_collection.my_test:
-    name: hello world
+  zone:
+    name: myzone.test
+    api_key: myapikey
+    email: myemail@mail.com
+    account_id: myaccountid
 
-# pass in a message and have changed true
-- name: Test with a message and changed output
-  my_namespace.my_collection.my_test:
-    name: hello world
-    new: true
-
-# fail the module
-- name: Test failure of the module
-  my_namespace.my_collection.my_test:
-    name: fail me
+# Create a zone called "myzone.test" in the root account
+- name: Test with a message
+  zone:
+    name: myzone.test
+    api_key: myapikey
+    email: myemail@mail.com
 '''
 
 RETURN = r'''
 # These are examples of possible return values, and in general should use other names for return values.
-original_message:
-    description: The original name param that was passed in.
+zone_id:
+    description: The zone id that has been created or retrieved
     type: str
     returned: always
-    sample: 'hello world'
-message:
-    description: The output message that the test module generates.
-    type: str
-    returned: always
-    sample: 'goodbye'
+    sample: ''
 '''
 
 from ansible.module_utils.basic import AnsibleModule
 import CloudFlare
-
-
 
     
 def get_or_create_zone(cf=None, params=None):
@@ -151,28 +148,16 @@ def run_module():
         name=dict(type='str', required=True)
     )
     
-    # seed the result dict in the object
-    # we primarily care about changed and state
-    # changed is if this module effectively modified the target
-    # state will include any data that you want your module to pass back
-    # for consumption, for example, in a subsequent task
     result = dict(
         changed=False,
         zone_id=''
     )
 
-    # the AnsibleModule object will be our abstraction working with Ansible
-    # this includes instantiation, a couple of common attr would be the
-    # args/params passed to the execution, as well as if the module
-    # supports check mode
     module = AnsibleModule(
         argument_spec=module_args,
         supports_check_mode=True
     )
 
-    # if the user is working with this module in only check mode we do not
-    # want to make any changes to the environment, just return the current
-    # state with no modifications
     if module.check_mode:
         module.exit_json(**result)
 
