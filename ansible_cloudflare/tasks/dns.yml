@@ -7,4 +7,4 @@
     type: "{{ item.type }}"
     ttl: "{{ item.ttl }}"
     data: "{{ item.data}}"
-  loop: "{{ ansible_records }}"
+  loop: "{{ ansible_cloudflare_records }}"
