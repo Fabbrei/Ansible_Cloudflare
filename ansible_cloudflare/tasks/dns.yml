@@ -7,6 +7,6 @@
     type: "{{ record.type }}"
     ttl: "{{ record.ttl }}"
     data: "{{ record.data}}"
-  loop: "{{ ansible_cloudflare_records }}"
+  loop: "{{ ansible_cloudflare_dns_records }}"
   loop_control:
     loop_var: record

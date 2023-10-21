@@ -2,10 +2,11 @@
   page_rule:
     api_key: "{{ ansible_cloudflare_api_key }}"
     email: "{{ ansible_cloudflare_email }}"
+    zone_id: "{{ ansible_cloudflare_zone_id }}"
     targets: "{{ page_rule.targets }}"
     actions: "{{ page_rule.actions }}"
     status: "{{ page_rule.status }}"
-    priority: "{{ page_rule.priority }}"
+    priority: "{{ page_rule.priority | default(1) }}"
   loop: "{{ ansible_cloudflare_page_rules }}"
   loop_control:
     loop_var: page_rule

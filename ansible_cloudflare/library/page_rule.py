@@ -92,8 +92,54 @@ record_id:
 from ansible.module_utils.basic import AnsibleModule
 import CloudFlare
 
+
+def create_page_rule(cf, zone_id, page_rule_data):
+
+    current_page_rules = cf.zones.pagerules.get(zone_id)
+
+    result = dict(
+        changed=False,
+        page_rule_id=''
+    )
+
+    return_status = False
+
+    msg = ""
+
+    # TODO Evaulate the array instead of single target/action
+    
+    for current_page_rule in current_page_rules:
+        if current_page_rule['targets'][0]['target']['url'] == page_rule_data['targets'][0]['target']['url']:
+            if current_page_rule['actions'][0] == page_rule_data['actions'][0]:
+                msg = f"Rule with target with action exists"
+                return_status = True
+                result['page_rule_id'] = current_page_rule['id']
+                return return_status, result, msg
+            else:
+                try:
+                    new_page_rule = cf.zones.pagerules.put(zone_id, page_rule_data)
+                except Exception as e:
+                    msg = f"Error creating new rule\nError:{e}"
+                    return return_status, result, msg
+
+                result['changed'] = True
+                return_status = True
+                result['page_rule_id'] = new_page_rule['id']
+                return return_status, result, msg
+    
+    new_page_rule = cf.zones.pagerules.post(zone_id, page_rule_data)
+
+    result['changed'] = True
+    return_status = True
+    result['page_rule_id'] = new_page_rule['id']
+
+    return return_status, result, msg
+
+            
+
+
+
 def run_module():
-    #TODO: Use options to define list of dict and keys of the dict.
     module_args = dict(
         email=dict(type='str', required=True),
         api_key=dict(type='str', required=True),
@@ -103,8 +149,8 @@ def run_module():
             required=True,
             elements='dict',
             options=dict(
-                target=dict(type='str', required=True),
-                constraints=dict(
+                target=dict(type='str', required=True, choices=['url']),
+                constraint=dict(
                     type='dict',
                     required=True,
                     options=dict(
@@ -112,12 +158,11 @@ def run_module():
                             type='str',
                             required=True,
                             choices=['matches', 'contains', 'equals', 'not_equal', 'not_contain']
-                            ),
-                        values=dict(type='str', required=True)
+                        ),
+                        value=dict(type='str', required=True)
                     )
                 )
             )
-
         ),
         actions=dict(
             type='list',
@@ -129,7 +174,7 @@ def run_module():
             )
         ),
         status=dict(type='str', required=True, choices=['active', 'disabled']),
-        priority=dict(type='int', required=True)
+        priority=dict(type='int', required=False, default=1)
 
     )
 
@@ -153,15 +198,13 @@ def run_module():
     except Exception as e:
         msg = f"Failed to initialize Cloudflare API\nError: {e}"
         module.fail_json(msg=msg, **result)
+
+
+    zone_id = module.params['zone_id']
+
+    page_rule_data = { k: module.params[k] for k in ['targets', 'actions', 'status', 'priority']}
     
-
-
-    if module.params['file_db']:
-        return_status, result, msg = import_dns_db(cf, module.params['file_db'], module.params['zone_id'])
-    else:
-        return_status, result, msg = get_or_create_dns_record(cf, module.params)
-
-    
+    return_status, result, msg = create_page_rule(cf, zone_id, page_rule_data)
 
     if not return_status:
         module.fail_json(msg=msg, **result)
