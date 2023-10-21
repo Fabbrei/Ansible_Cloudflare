@@ -117,7 +117,7 @@ def create_page_rule(cf, zone_id, page_rule_data):
                 return return_status, result, msg
             else:
                 try:
-                    new_page_rule = cf.zones.pagerules.put(zone_id, page_rule_data)
+                    new_page_rule = cf.zones.pagerules.put(zone_id, current_page_rule['id'], data=page_rule_data)
                 except Exception as e:
                     msg = f"Error creating new rule\nError:{e}"
                     return return_status, result, msg
