@@ -142,7 +142,7 @@ def create_page_rule(cf, zone_id, page_rule_data):
 def run_module():
     module_args = dict(
         email=dict(type='str', required=True),
-        api_key=dict(type='str', required=True),
+        api_key=dict(type='str', required=True, no_log=True),
         zone_id=dict(type='str', required=True),
         targets=dict(
             type='list',  

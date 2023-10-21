@@ -143,7 +143,7 @@ def run_module():
     # define available arguments/parameters a user can pass to the module
     module_args = dict(
         email=dict(type='str', required=True),
-        api_key=dict(type='str', required=True),
+        api_key=dict(type='str', required=True, no_log=True),
         account_id=dict(type='str', required=False),
         name=dict(type='str', required=True)
     )

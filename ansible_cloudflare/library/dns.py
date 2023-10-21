@@ -185,7 +185,7 @@ def import_dns_db(cf=None, db_file_path=None, zone_id=None):
 def run_module():
     module_args = dict(
         email=dict(type='str', required=True),
-        api_key=dict(type='str', required=True),
+        api_key=dict(type='str', required=True, no_log=True),
         zone_id=dict(type='str', required=True),
         name=dict(type='str', required=False),
         type=dict(type='str', required=False),
