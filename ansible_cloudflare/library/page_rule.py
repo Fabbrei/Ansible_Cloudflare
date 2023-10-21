@@ -170,7 +170,7 @@ def run_module():
             elements='dict',
             options=dict(
                 id=dict(type='str', required=True),
-                value=dict(type='str', required=True)
+                value=dict(type='dict', required=True)
             )
         ),
         status=dict(type='str', required=True, choices=['active', 'disabled']),
