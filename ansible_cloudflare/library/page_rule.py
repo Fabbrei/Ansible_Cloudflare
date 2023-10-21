@@ -109,7 +109,7 @@ def create_page_rule(cf, zone_id, page_rule_data):
     # TODO Evaulate the array instead of single target/action
     
     for current_page_rule in current_page_rules:
-        if current_page_rule['targets'][0]['target']['url'] == page_rule_data['targets'][0]['target']['url']:
+        if current_page_rule['targets'][0]['constraint']['value'] == page_rule_data['targets'][0]['constraint']['value']:
             if current_page_rule['actions'][0] == page_rule_data['actions'][0]:
                 msg = f"Rule with target with action exists"
                 return_status = True
