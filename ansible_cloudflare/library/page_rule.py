@@ -91,119 +91,46 @@ record_id:
 
 from ansible.module_utils.basic import AnsibleModule
 import CloudFlare
-import os
-
-def get_or_create_dns_record(cf=None, params=None):
-    zone_id=params['zone_id']
-    name=params['name']
-    type=params['type']
-    data=params['data']
-    ttl=params['ttl']
-
-    result = dict(
-        changed=False,
-        record_id=''
-    )
-
-    return_status = False
-
-    msg = ""
-
-    if not cf:
-        msg = "Object Cloudflare is None"
-        return return_status, result, msg
-
-    dns_records = cf.zones.dns_records(zone_id)
-
-    if 'content' in data:
-        key_pivot = 'content'
-        param_to_search = data['content']
-    else:
-        key_pivot = 'data'
-        param_to_search = data
-
-    for record in dns_records:
-        if record['type'] == type and record['name'] == name and record[key_pivot] == param_to_search:
-            msg = f"Record {type} - {name} - {param_to_search} already on zone"
-            return_status = True
-            result['record_id'] = record['id']
-            return return_status, result, msg
-
-
-    
-    dns_record = {
-        "type": type,
-        "name": name,
-        "ttl": ttl
-    }
-
-    if type == "SRV":
-        dns_record.update({"data": data})
-    else:
-        dns_record.update({"content": data['content']})
-
-    new_record = cf.zones.dns_records.post(zone_id, data=dns_record)
-
-    return_status = True
-    result['changed'] = True
-    result['record_id'] = new_record['id']
-
-    return return_status, result, msg
-
-
-def import_dns_db(cf=None, db_file_path=None, zone_id=None):
-    result = dict(
-        changed=False,
-        record_id=''
-    )
-
-    return_status = False
-
-    msg = ""
-    if not os.path.exists(db_file_path):
-        msg = f"DB file {db_file_path} does not exists"
-        return return_status, result, msg
-
-    fd = open(db_file_path, 'rb')
-
-    m = cf.zones.dns_records
-    m = getattr(m, 'import_')
-    
-    try:
-        db_import = m.post(zone_id, files={'file':fd})
-    except Exception as e:
-        msg = f"Error importing the DB file\nError: {e}"
-        return return_status, result, msg
-
-    return_status = True
-    result['changed'] = True
-
-    return return_status, result, msg
-        
-
 
 def run_module():
+    #TODO: Use options to define list of dict and keys of the dict.
     module_args = dict(
         email=dict(type='str', required=True),
         api_key=dict(type='str', required=True),
         zone_id=dict(type='str', required=True),
-        name=dict(type='str', required=False),
-        type=dict(type='str', required=False),
-        data=dict(
-            type='dict',
-            required=False,
+        targets=dict(
+            type='list',  
+            required=True,
+            elements='dict',
             options=dict(
-                content=dict(type='str'),
-                data=dict(type='str')
+                target=dict(type='str', required=True),
+                constraints=dict(
+                    type='dict',
+                    required=True,
+                    options=dict(
+                        operator=dict(
+                            type='str',
+                            required=True,
+                            choices=['matches', 'contains', 'equals', 'not_equal', 'not_contain']
+                            ),
+                        values=dict(type='str', required=True)
+                    )
                 )
+            )
+
         ),
-        ttl=dict(type='int', required=False),
-        file_db=dict(type='str', required=False),
-        mutually_exclusive=['name', 'file_db'],
-        required_one_of=[('name', 'file_db')],
-        required_together=[
-            ('name', 'type', 'data', 'ttl')
-        ]
+        actions=dict(
+            type='list',
+            required=True,
+            elements='dict',
+            options=dict(
+                id=dict(type='str', required=True),
+                value=dict(type='str', required=True)
+            )
+        ),
+        status=dict(type='str', required=True, choices=['active', 'disabled']),
+        priority=dict(type='int', required=True)
+
     )
 
     result = dict(

@@ -3,4 +3,4 @@
     api_key: "{{ ansible_cloudflare_api_key }}"
     email: "{{ ansible_cloudflare_email }}"
     zone_id: "{{ ansible_cloudflare_zone_id }}"
-    file_db: "{{ ansible_cloudflare_db_file }}"
+    file_db: "{{ ansible_cloudflare_dns_db_file }}"

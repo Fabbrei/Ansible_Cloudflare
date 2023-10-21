@@ -5,8 +5,13 @@
 
 - name: Import dns task
   import_tasks: dns.yml
-  when: (ansible_cloudflare_records | length) > 0
+  when: (ansible_cloudflare_dns_records | length) > 0
 
 - name: Import dns_file tasks
   import_tasks: dns_file.yml
-  when: ansible_cloudflare_db_file != ''
+  when: ansible_cloudflare_dns_db_file != ''
+
+- name: Import page_rule tasks
+  import_tasks: page_rule.yml
+  when: (ansible_cloudflare_page_rules | length) > 0
+
