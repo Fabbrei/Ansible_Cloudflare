@@ -198,12 +198,7 @@ def run_module():
                 )
         ),
         ttl=dict(type='int', required=False),
-        file_db=dict(type='str', required=False),
-        mutually_exclusive=['name', 'file_db'],
-        required_one_of=[('name', 'file_db')],
-        required_together=[
-            ('name', 'type', 'data', 'ttl')
-        ]
+        file_db=dict(type='str', required=False)
     )
 
     result = dict(
@@ -213,7 +208,12 @@ def run_module():
 
     module = AnsibleModule(
         argument_spec=module_args,
-        supports_check_mode=True
+        supports_check_mode=True,
+        mutually_exclusive=[('name', 'file_db')],
+        required_one_of=[('name', 'file_db')],
+        required_together=[
+            ('name', 'type', 'data', 'ttl')
+        ]
     )
 
     if module.check_mode:
