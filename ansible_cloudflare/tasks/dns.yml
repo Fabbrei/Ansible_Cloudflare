@@ -1,12 +1,15 @@
 - name: Add dns record
   dns:
-    name: "{{ record.name }}"
     api_key: "{{ ansible_cloudflare_api_key }}"
     email: "{{ ansible_cloudflare_email }}"
     zone_id: "{{ ansible_cloudflare_zone_id }}"
+    value: "{{ record.value}}"
+    name: "{{ record.name }}"
+    priority: "{{ record.priority | default(-1) }}"
     type: "{{ record.type }}"
-    ttl: "{{ record.ttl }}"
-    data: "{{ record.data}}"
+    comment: "{{ record.comment | default('') }}"
+    tags: "{{ record.tags | default([]) }}"
+    ttl: "{{ record.ttl | default(60) }}"
   loop: "{{ ansible_cloudflare_dns_records }}"
   loop_control:
     loop_var: record

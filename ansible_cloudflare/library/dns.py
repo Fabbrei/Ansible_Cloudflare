@@ -93,12 +93,7 @@ from ansible.module_utils.basic import AnsibleModule
 import CloudFlare
 import os
 
-def get_or_create_dns_record(cf=None, params=None):
-    zone_id=params['zone_id']
-    name=params['name']
-    type=params['type']
-    data=params['data']
-    ttl=params['ttl']
+def get_or_create_dns_record(cf, zone_id, dns_record_data):
 
     result = dict(
         changed=False,
@@ -114,40 +109,37 @@ def get_or_create_dns_record(cf=None, params=None):
         return return_status, result, msg
 
     dns_records = cf.zones.dns_records(zone_id)
-
-    if 'content' in data:
-        key_pivot = 'content'
-        param_to_search = data['content']
-    else:
-        key_pivot = 'data'
-        param_to_search = data
+    
+    value_key = 'content' if 'content' in dns_record_data['value'] else 'data'
 
     for record in dns_records:
-        if record['type'] == type and record['name'] == name and record[key_pivot] == param_to_search:
-            msg = f"Record {type} - {name} - {param_to_search} already on zone"
+        if record['type'] == dns_record_data['type'] and \
+            record['name'] == dns_record_data['name'] and \
+            record[value_key] == dns_record_data['value'][value_key]:
+            msg = f"Record {record['type']} - {record['name']} - {value_key} already on zone"
             return_status = True
             result['record_id'] = record['id']
             return return_status, result, msg
 
+    keys_to_remove = ["email", "api_key", "zone_id", "file_db"]
+    dns_record = {}
 
-    
-    dns_record = {
-        "type": type,
-        "name": name,
-        "ttl": ttl
-    }
-
-    if type == "SRV":
-        dns_record.update({"data": data})
-    else:
-        dns_record.update({"content": data['content']})
+    for key, value in dns_record_data.items():
+        if key == 'priority' and value == -1:
+            continue
+        if key not in keys_to_remove:
+            if key == "value":
+                for k,v in value.items():
+                    if v is not None:
+                        dns_record[k] = v
+            else:
+                dns_record[key] = value
 
     new_record = cf.zones.dns_records.post(zone_id, data=dns_record)
 
     return_status = True
     result['changed'] = True
     result['record_id'] = new_record['id']
-
     return return_status, result, msg
 
 
@@ -187,16 +179,19 @@ def run_module():
         email=dict(type='str', required=True),
         api_key=dict(type='str', required=True, no_log=True),
         zone_id=dict(type='str', required=True),
-        name=dict(type='str', required=False),
-        type=dict(type='str', required=False),
-        data=dict(
+        value=dict(
             type='dict',
             required=False,
             options=dict(
-                content=dict(type='str'),
-                data=dict(type='str')
-                )
+                content=dict(type='str', required=False),
+                data=dict(type='dict',required=False),
+            )
         ),
+        name=dict(type='str', required=False),
+        priority=dict(type='int', required=False), # TODO this could be None
+        type=dict(type='str', required=False),
+        comment=dict(type='str', required=False),
+        tags=dict(type='list', required=False),
         ttl=dict(type='int', required=False),
         file_db=dict(type='str', required=False)
     )
@@ -212,7 +207,7 @@ def run_module():
         mutually_exclusive=[('name', 'file_db')],
         required_one_of=[('name', 'file_db')],
         required_together=[
-            ('name', 'type', 'data', 'ttl')
+            ('name', 'type', 'ttl')
         ]
     )
 
@@ -232,7 +227,7 @@ def run_module():
     if module.params['file_db']:
         return_status, result, msg = import_dns_db(cf, module.params['file_db'], module.params['zone_id'])
     else:
-        return_status, result, msg = get_or_create_dns_record(cf, module.params)
+        return_status, result, msg = get_or_create_dns_record(cf, module.params['zone_id'], module.params)
 
     
 
